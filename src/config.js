@@ -23,6 +23,7 @@ function numberFromEnv(name, fallback) {
 const config = {
   apiBaseUrl: required("API_BASE_URL").replace(/\/+$/, ""),
   agentCode: required("AGENT_CODE"),
+  agentName: String(process.env.AGENT_NAME || process.env.AGENT_CODE || "Print Agent").trim(),
   agentToken: required("AGENT_TOKEN"),
   printerCode: required("PRINTER_CODE"),
   printerIp: required("PRINTER_IP"),
@@ -34,7 +35,6 @@ const config = {
   localHttpPort: numberFromEnv("LOCAL_HTTP_PORT", 3000),
   localAdminToken: String(process.env.LOCAL_ADMIN_TOKEN || "").trim(),
   sqlitePath: path.resolve(String(process.env.SQLITE_PATH || "./data/agent.db")),
-  ticketHeader: String(process.env.TICKET_HEADER || "Pizzeria").trim(),
 };
 
 const sqliteDirectory = path.dirname(config.sqlitePath);

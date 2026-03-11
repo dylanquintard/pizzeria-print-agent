@@ -23,6 +23,7 @@ npm start
 
 - `API_BASE_URL`
 - `AGENT_CODE`
+- `AGENT_NAME`
 - `AGENT_TOKEN`
 - `PRINTER_CODE`
 - `PRINTER_IP`

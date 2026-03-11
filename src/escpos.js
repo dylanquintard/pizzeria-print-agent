@@ -10,30 +10,80 @@ function line(value = "") {
 }
 
 function separator() {
-  return "--------------------------------\n";
+  return `${"-".repeat(42)}\n`;
+}
+
+function parseCustomerDisplay(customer) {
+  const fullName = sanitizeText(customer?.full_name || "");
+  const firstName = sanitizeText(customer?.first_name || "");
+  const lastName = sanitizeText(customer?.last_name || "");
+
+  if (firstName || lastName) {
+    return {
+      firstName: firstName || "-",
+      lastName: lastName || "-",
+    };
+  }
+
+  if (!fullName) {
+    return {
+      firstName: "-",
+      lastName: "-",
+    };
+  }
+
+  const parts = fullName.split(" ").filter(Boolean);
+  if (parts.length === 1) {
+    return {
+      firstName: parts[0],
+      lastName: "-",
+    };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
+function formatPickupTime(value) {
+  const raw = sanitizeText(value || "");
+  if (!raw) return "-";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return raw;
+  }
+  const dd = String(parsed.getDate()).padStart(2, "0");
+  const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+  const yyyy = parsed.getFullYear();
+  const hh = String(parsed.getHours()).padStart(2, "0");
+  const min = String(parsed.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
 function buildOrderTicketBuffer(payload, options = {}) {
   const order = payload?.order || {};
   const items = Array.isArray(order.items) ? order.items : [];
   const customer = order.customer || {};
-  const header = sanitizeText(options.ticketHeader || "Pizzeria");
+  const customerDisplay = parseCustomerDisplay(customer);
+  const agentName = sanitizeText(options.agentName || "Print Agent");
+  const isCopy = Boolean(payload?.reprint?.source_job_id);
+  const ticketStatus = isCopy ? "COPIE" : "ORIGINAL";
+  const orderNumber = sanitizeText(order.number || `A-${order.id || "?"}`);
 
   let text = "";
-  text += line(header);
-  text += line("TICKET COMMANDE");
+  text += line(ticketStatus);
+  text += line(agentName);
   text += separator();
-  text += line(`Commande: ${sanitizeText(order.number || `#${order.id || "?"}`)}`);
-  text += line(`Retrait: ${sanitizeText(order.pickup_time || "-")}`);
-  if (order.location?.name) {
-    text += line(`Lieu: ${sanitizeText(order.location.name)}`);
-  }
+  text += line(`TICKET COMMANDE N: ${orderNumber}`);
+  text += line(`Heure retrait: ${formatPickupTime(order.pickup_time)}`);
   text += separator();
-  text += line(`Client: ${sanitizeText(customer.full_name || [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "-")}`);
-  if (customer.phone) {
-    text += line(`Tel: ${sanitizeText(customer.phone)}`);
-  }
+  text += line("INFOS CLIENT");
+  text += line(`Nom: ${customerDisplay.lastName}`);
+  text += line(`Prenom: ${customerDisplay.firstName}`);
+  text += line(`Numero: ${sanitizeText(customer.phone || "-")}`);
   text += separator();
+  text += line("DETAILS COMMANDE");
 
   for (const item of items) {
     const qty = Number(item?.qty || 0);
@@ -56,8 +106,6 @@ function buildOrderTicketBuffer(payload, options = {}) {
   if (order.note) {
     text += line(`Note: ${sanitizeText(order.note)}`);
   }
-  text += separator();
-  text += line(`Job: ${sanitizeText(payload?.job_id || "-")}`);
   text += "\n\n";
 
   const initialize = Buffer.from([0x1b, 0x40]);
@@ -67,9 +115,9 @@ function buildOrderTicketBuffer(payload, options = {}) {
 }
 
 function buildTestTicketBuffer(text, options = {}) {
-  const header = sanitizeText(options.ticketHeader || "Pizzeria");
+  const agentName = sanitizeText(options.agentName || "Print Agent");
   const body = sanitizeText(text || "TEST IMPRESSION");
-  const content = `${header}\nTEST\n${body}\n${new Date().toISOString()}\n\n`;
+  const content = `TEST\n${agentName}\n${separator()}${body}\n\n`;
   return Buffer.concat([
     Buffer.from([0x1b, 0x40]),
     Buffer.from(content, "utf8"),

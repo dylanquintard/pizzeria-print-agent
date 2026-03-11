@@ -77,19 +77,19 @@ function createPrinterClient(options) {
   const host = options.printerIp;
   const port = Number(options.printerPort);
   const timeoutMs = Number(options.socketTimeoutMs || 5000);
-  const ticketHeader = options.ticketHeader || "Pizzeria";
+  const agentName = String(options.agentName || options.agentCode || "Print Agent");
 
   return {
     async checkConnection() {
       return checkPrinterTcp(host, port, Math.min(timeoutMs, 3000));
     },
     async printOrder(payload) {
-      const buffer = buildOrderTicketBuffer(payload, { ticketHeader });
+      const buffer = buildOrderTicketBuffer(payload, { agentName });
       await sendRawBuffer(host, port, buffer, timeoutMs);
       return true;
     },
     async printTest(text) {
-      const buffer = buildTestTicketBuffer(text, { ticketHeader });
+      const buffer = buildTestTicketBuffer(text, { agentName });
       await sendRawBuffer(host, port, buffer, timeoutMs);
       return true;
     },
