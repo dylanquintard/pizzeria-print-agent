@@ -27,7 +27,8 @@ function createHealthServer({ config, agent, logger }) {
   app.post("/test-print", localAuthMiddleware, async (req, res) => {
     try {
       const text = String(req.body?.text || "Test print local");
-      await agent.runTestPrint(text);
+      const printerCode = String(req.body?.printerCode || req.body?.printer_code || "").trim() || null;
+      await agent.runTestPrint(text, printerCode);
       res.json({ ok: true });
     } catch (err) {
       logger.error({ err: err?.message || err }, "test print failed");
@@ -35,9 +36,10 @@ function createHealthServer({ config, agent, logger }) {
     }
   });
 
-  app.post("/reprint-last", localAuthMiddleware, async (_req, res) => {
+  app.post("/reprint-last", localAuthMiddleware, async (req, res) => {
     try {
-      await agent.reprintLastTicket();
+      const printerCode = String(req.body?.printerCode || req.body?.printer_code || "").trim() || null;
+      await agent.reprintLastTicket(printerCode);
       res.json({ ok: true });
     } catch (err) {
       logger.error({ err: err?.message || err }, "reprint last failed");

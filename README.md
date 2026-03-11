@@ -1,9 +1,9 @@
 # pizzeria-print-agent
 
-Print bridge local pour Raspberry Pi 4:
+Bridge local Raspberry Pi pour l'impression thermique:
 - heartbeat vers `pizzeria-backend`
 - polling jobs `/api/print/agents/:agentCode/claim-next`
-- impression ESC/POS TCP (imprimante ethernet port 9100)
+- impression ESC/POS TCP (port 9100)
 - spool SQLite local (`pending_acks`, `local_jobs`)
 - API locale:
   - `GET /health`
@@ -25,9 +25,12 @@ npm start
 - `AGENT_CODE`
 - `AGENT_NAME`
 - `AGENT_TOKEN`
-- `PRINTER_CODE`
-- `PRINTER_IP`
-- `PRINTER_PORT`
+- Mono imprimante:
+  - `PRINTER_CODE`
+  - `PRINTER_IP`
+  - `PRINTER_PORT`
+- Multi imprimantes (optionnel):
+  - `PRINTERS_JSON` (JSON array `[{code,ip,port}]`)
 - `SQLITE_PATH`
 
 ## Endpoints locaux
@@ -37,20 +40,20 @@ Sans token local:
 curl http://127.0.0.1:3000/health
 ```
 
-Avec `LOCAL_ADMIN_TOKEN` activé:
+Avec `LOCAL_ADMIN_TOKEN`:
 ```bash
 curl -X POST http://127.0.0.1:3000/test-print \
   -H "x-local-token: TON_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"text":"Bonjour test"}'
+  -d '{"text":"Bonjour test","printerCode":"kitchen_main"}'
 
 curl -X POST http://127.0.0.1:3000/reprint-last \
-  -H "x-local-token: TON_TOKEN"
+  -H "x-local-token: TON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"printerCode":"kitchen_main"}'
 ```
 
 ## Service systemd (Pi)
-
-Copier le fichier `systemd/pizzeria-print-agent.service` puis:
 
 ```bash
 sudo cp systemd/pizzeria-print-agent.service /etc/systemd/system/

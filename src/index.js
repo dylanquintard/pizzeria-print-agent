@@ -7,21 +7,33 @@ const { createAgent } = require("./agent");
 const { createHealthServer } = require("./health-server");
 
 async function main() {
+  const printers = config.printers.map((entry) => ({
+    code: entry.code,
+    ip: entry.ip,
+    port: Number(entry.port),
+  }));
+
   logger.info(
     {
       apiBaseUrl: config.apiBaseUrl,
       agentCode: config.agentCode,
-      printerCode: config.printerCode,
-      printerIp: config.printerIp,
-      printerPort: config.printerPort,
+      printers,
     },
     "starting print agent"
   );
 
   const db = createDb(config.sqlitePath);
   const api = createBackendApi(config);
-  const printer = createPrinterClient(config);
-  const agent = createAgent({ config, api, db, printer, logger });
+  const printerClients = printers.map((printer) => ({
+    ...printer,
+    client: createPrinterClient({
+      ...config,
+      printerCode: printer.code,
+      printerIp: printer.ip,
+      printerPort: printer.port,
+    }),
+  }));
+  const agent = createAgent({ config, api, db, printers: printerClients, logger });
   const healthServer = createHealthServer({ config, agent, logger });
 
   await agent.start();

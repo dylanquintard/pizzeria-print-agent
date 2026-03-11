@@ -74,12 +74,23 @@ async function checkPrinterTcp(host, port, timeoutMs = 3000) {
 }
 
 function createPrinterClient(options) {
-  const host = options.printerIp;
-  const port = Number(options.printerPort);
+  const host = String(options.printerIp || options.ip || "").trim();
+  const port = Number(options.printerPort || options.port);
+  const code = String(options.printerCode || options.code || "").trim();
   const timeoutMs = Number(options.socketTimeoutMs || 5000);
   const agentName = String(options.agentName || options.agentCode || "Print Agent");
 
+  if (!host) {
+    throw new Error(`Missing printer host for printer ${code || "(unknown)"}`);
+  }
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(`Invalid printer port for printer ${code || "(unknown)"}`);
+  }
+
   return {
+    code,
+    ip: host,
+    port,
     async checkConnection() {
       return checkPrinterTcp(host, port, Math.min(timeoutMs, 3000));
     },
