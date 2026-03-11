@@ -1,0 +1,19 @@
+[Unit]
+Description=Pizzeria Print Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/pizzeria-print-agent
+EnvironmentFile=/opt/pizzeria-print-agent/.env
+ExecStart=/usr/bin/node /opt/pizzeria-print-agent/src/index.js
+Restart=always
+RestartSec=2
+User=pi
+Group=pi
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
